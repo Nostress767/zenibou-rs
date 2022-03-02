@@ -1,6 +1,6 @@
-This is a Rust port of [Zenibou](https://github.com/Nostress767/Zenibou)(which is made in C).
+This is a Rust port of [Zenibou](https://github.com/Nostress767/Zenibou) (which is made in C).
 
-Firstly, get [Visual Studio's Build Tools For C/C++ Development](https://visualstudio.microsoft.com/downloads/?q=build+tools) if you don't have them already to be able to compile for windows.
+Firstly, get [Visual Studio's Build Tools For C/C++ Development](https://visualstudio.microsoft.com/downloads/?q=build+tools) if you don't have it already to be able to compile for windows.
 
 Then, make sure you have the i686-pc-windows-msvc target, if you don't, just run:
 
