@@ -19,20 +19,18 @@ fn main(){
     let c = |col : u32| (&window).c(col);
     let end_frame = || (&window).end_frame();
 
-    let mut seconds : u64 = 0;
-
     while window.is_running {
         begin_frame();
-            if window.clock.total_elapsed_time.get() > seconds as f64{
-                println!("Frames last second: {} ({})", window.clock.frames_last_second.get(), window.clock.total_elapsed_time.get());
-                seconds += 1;
-            }
             c(0xFFFF00FF);
             for i in 0..100{
                 for j in 0..100{
                     d(100+j,100+i,0x00FF00FF);
                 }
             }
+            window.draw_string5x5(10, 430,
+                format!("Frames last second: {} ({:.2})", window.clock.frames_last_second.get(), window.clock.total_elapsed_time.get()).as_str()
+                , 0xFF0000FF, 3, 1, 5);
+            window.draw_string5x5(50, 30, "Totally transformative elixir!", 0xFF0000FF, 3, 1, 5);
         end_frame();
     }
 }
@@ -65,6 +63,7 @@ pub extern "system" fn mainCRTStartup() {
                     d(100+j,100+i,0x00FF00FF);
                 }
             }
+            window.draw_string5x5(50, 30, "Totally transformative elixir!", 0xFF0000FF, 3, 1, 5);
         end_frame();
     }
 }
