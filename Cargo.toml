@@ -3,30 +3,17 @@ name = "zenibou-rs"
 version = "0.1.0"
 edition = "2021"
 
-# TODO: figure out how to get those symbols, so we can have clock for no_std
-### MISSING SYMBOLS _clock AND _fltused FOR no_std IMPLEMENTATION, so for now this is commented out
-
 [profile.dev]
-#lto = true # uncomment for building in no_std mode
-#panic = 'abort' # uncomment for building in no_std mode
 codegen-units = 1
 opt-level = "z"
 
 [profile.release]
-#lto = true # uncomment for building in no_std mode
-#panic = 'abort' # uncomment for building in no_std mode
 codegen-units = 1
 opt-level = "z"
-
-[features]
-default = ["std"] # remove "std" for no_std mode
-std = []
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = ["winuser","memoryapi","wingdi","libloaderapi"] }
 libc = "0.2"
-# TODO: take a look at embedded-time crate, might be useful
-#libc-print = "0.1.17" # <- for printing with no_std
 
 [[bin]]
 name = "zenibou-rs"

@@ -1,5 +1,5 @@
 // TODO: add ALL VIRTUALKEY MACROS (VK_*) and UpdateKeyState for input
-use core::cell::Cell;
+use std::cell::Cell;
 
 unsafe extern "system" fn window_procedure(
     window_handle : winapi::shared::windef::HWND ,
@@ -108,7 +108,6 @@ unsafe extern "system" fn window_procedure(
     }   
 }
 
-#[cfg(feature = "std")]
 pub fn start_engine(size_x : i32, size_y : i32, window : &mut Window){
     let title: Vec<u16> = window.title.encode_utf16().chain(Some(0)).collect();
     unsafe {
@@ -190,87 +189,6 @@ pub fn start_engine(size_x : i32, size_y : i32, window : &mut Window){
     };
 }
 
-#[cfg(not(feature = "std"))]
-pub fn start_engine(size_x : i32, size_y : i32, window : &mut Window){
-    unsafe {
-        //winapi::um::winuser::SetProcessDpiAwarenessContext(winapi::shared::windef::DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
-        winapi::um::winuser::SetProcessDPIAware();
-        window.instance = winapi::um::libloaderapi::GetModuleHandleW(0 as *const u16);
-    }
-
-    let class_name : [u16; 8] = ['Z' as u16,'e' as u16,'n' as u16,'i' as u16,'b' as u16,'o' as u16,'u' as u16,'\0' as u16];
-
-    let mut window_class : winapi::um::winuser::WNDCLASSW = winapi::um::winuser::WNDCLASSW {
-        style : winapi::um::winuser::CS_HREDRAW | winapi::um::winuser::CS_VREDRAW,
-        lpfnWndProc : Some(window_procedure),
-        cbClsExtra : 0,
-        cbWndExtra : 4,
-        hInstance : window.instance,
-        hIcon : 0 as *mut winapi::shared::windef::HICON__,
-        hCursor : 0 as *mut winapi::shared::windef::HICON__,
-        hbrBackground : 0 as *mut winapi::shared::windef::HBRUSH__,
-        lpszMenuName : 0 as *const u16,
-        lpszClassName : class_name.as_ptr(),
-    };
-    
-    unsafe {
-        window_class.hCursor = winapi::um::winuser::LoadCursorW(0 as *mut winapi::shared::minwindef::HINSTANCE__,
-            winapi::um::winuser::IDC_ARROW);
-        //winapi::um::winuser::ShowCursor(0);
-        winapi::um::winuser::RegisterClassW(&window_class);
-        
-        window.current_pos_x = (winapi::um::winuser::GetSystemMetrics(winapi::um::winuser::SM_CXSCREEN) / 2) - (size_x / 2);
-        window.current_pos_y = (winapi::um::winuser::GetSystemMetrics(winapi::um::winuser::SM_CYSCREEN) / 2) - (size_y / 2); 
-
-        let rect : winapi::shared::windef::RECT =
-            winapi::shared::windef::RECT { left: 0, top: 0, right: size_x, bottom: size_y };
-        winapi::um::winuser::AdjustWindowRectEx((&rect as *const winapi::shared::windef::RECT) as *mut winapi::shared::windef::RECT,
-            winapi::um::winuser::WS_OVERLAPPEDWINDOW | winapi::um::winuser::WS_VISIBLE,
-            0,
-            0);
-
-        window.handle = winapi::um::winuser::CreateWindowExW(//winapi::um::winuser::WS_EX_OVERLAPPEDWINDOW,
-                                    0, 
-                                    class_name.as_ptr(), window.title.as_ptr(),
-                                    winapi::um::winuser::WS_OVERLAPPEDWINDOW | winapi::um::winuser::WS_VISIBLE,
-                                    //winapi::um::winuser::WS_POPUP | winapi::um::winuser::WS_VISIBLE,
-                                    window.current_pos_x, window.current_pos_y,
-                                    rect.right - rect.left, rect.bottom - rect.top,
-                                    0 as winapi::shared::windef::HWND, 0 as winapi::shared::windef::HMENU, 
-                                    window.instance, 0 as winapi::shared::minwindef::LPVOID);
-        winapi::um::winuser::SetWindowLongPtrW(window.handle, 0, (window as *const Window) as i32);
-        window.bitmap_memory = winapi::um::memoryapi::VirtualAlloc(0 as *mut winapi::ctypes::c_void, size_x as usize * size_y as usize * 4, winapi::um::winnt::MEM_RESERVE | winapi::um::winnt::MEM_COMMIT, winapi::um::winnt::PAGE_READWRITE);
-        window.bitmap_device_context = winapi::um::winuser::GetDC(window.handle);
-    }
-
-    window.width = size_x;
-    window.height = size_y;
-
-    window.bitmap_info = winapi::um::wingdi::BITMAPINFO { 
-        bmiHeader : winapi::um::wingdi::BITMAPINFOHEADER { 
-            biSize : core::mem::size_of::<winapi::um::wingdi::BITMAPINFOHEADER>() as u32,
-            biWidth : size_x,
-            biHeight : size_y,
-            biPlanes : 1,
-            biBitCount : 32,
-            biCompression : winapi::um::wingdi::BI_RGB,
-            biSizeImage : 0,
-            biXPelsPerMeter : 0,
-            biYPelsPerMeter : 0,
-            biClrUsed : 0,
-            biClrImportant : 0,
-        },
-        bmiColors : [
-            winapi::um::wingdi::RGBQUAD {
-                rgbBlue : 0,
-                rgbGreen : 0,
-                rgbRed : 0,
-                rgbReserved : 0,
-            }
-        ],
-    };
-}
-
 pub fn begin_frame(){
     unsafe {
         let mut msg = core::mem::MaybeUninit::uninit();
@@ -282,7 +200,6 @@ pub fn begin_frame(){
 
 
 impl Window {
-    #[cfg(feature = "std")]
     pub fn end_frame(&self){
         unsafe{
             // TODO: fix maximize window
@@ -311,34 +228,6 @@ impl Window {
            self.mouse.left_pressed.set(false);
         }
         self.clock.tick();
-    }
-    #[cfg(not(feature = "std"))]
-    pub fn end_frame(&self){
-        unsafe{
-            winapi::um::wingdi::StretchDIBits(
-                        self.bitmap_device_context,
-                        0,0,
-                        self.width, self.height,
-                        0,0,
-                        self.width, self.height,
-                        self.bitmap_memory,
-                        &self.bitmap_info,
-                        winapi::um::wingdi::DIB_RGB_COLORS,
-                        winapi::um::wingdi::SRCCOPY);
-        }
-        //for(int32_t i = 0; i < 512; i++){
-        //    if(Key[i].is_pressed){
-        //        Key[i].is_pressed = false;
-        //        Key[i].is_held = true;
-        //        Key[i].is_released = false;}
-        //    else if(Key[i].is_held){}
-        //    else if(Key[i].is_released){
-        //        Key[i].is_pressed = false;
-        //        Key[i].is_held = false;
-        //        Key[i].is_released = false;}}
-        if self.mouse.left_pressed.get(){
-           self.mouse.left_pressed.set(false);
-        }
     }
 
     pub fn d(&self, x : i32, y : i32, color : u32){
@@ -438,11 +327,7 @@ enum OtherKeys {
 }
 
 pub struct Window{
-    #[cfg(feature = "std")]
     pub title : String,
-
-    #[cfg(not(feature = "std"))]
-    pub title : [u16; 100],
 
     pub width : i32,
     pub height : i32,
@@ -450,10 +335,7 @@ pub struct Window{
     pub current_pos_y : i32,
     pub is_running : bool,
     pub is_focused : bool,
-
-    #[cfg(feature = "std")]
     pub clock : Clock,
-
     pub mouse : Mouse,
     pub key : [Key; 256],
     pub bitmap_memory : *mut winapi::ctypes::c_void,
@@ -466,22 +348,14 @@ pub struct Window{
 impl Default for Window {
     fn default () -> Window {
         Window{
-            #[cfg(feature = "std")]
             title : String::new(),
-
-            #[cfg(not(feature = "std"))]
-            title : [0; 100],
-
             width : 0,
             height : 0,
             current_pos_x : 0,
             current_pos_y : 0,
             is_running : true,
             is_focused : true,
-
-            #[cfg(feature = "std")]
             clock : Clock::default(),
-
             mouse : Mouse{
                 x : 0,
                 y : 0,
@@ -522,15 +396,12 @@ impl Default for Window {
     }
 }
 
-#[cfg(feature = "std")]
 extern crate libc;
 
-#[cfg(feature = "std")]
 extern {
     pub fn clock() -> ::libc::clock_t;
 }
 
-#[cfg(feature = "std")]
 pub struct Clock{
     pub last_second_elapsed_time : Cell<f64>,
     pub last_frame_elapsed_time : Cell<f64>,
@@ -541,7 +412,6 @@ pub struct Clock{
     pub time2 : Cell<i32>,
 }
 
-#[cfg(feature = "std")]
 impl Clock{
     fn tick(&self){
       self.time2.set(unsafe{ clock() });
@@ -558,7 +428,6 @@ impl Clock{
     }  
 }
 
-#[cfg(feature = "std")]
 impl Default for Clock{
     fn default() -> Clock{
         Clock{
