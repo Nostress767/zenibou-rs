@@ -111,7 +111,6 @@ unsafe extern "system" fn window_procedure(
 pub fn start_engine(size_x : i32, size_y : i32, window : &mut Window){
     let title: Vec<u16> = window.title.encode_utf16().chain(Some(0)).collect();
     unsafe {
-        //winapi::um::winuser::SetProcessDpiAwarenessContext(winapi::shared::windef::DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
         winapi::um::winuser::SetProcessDPIAware();
         window.instance = winapi::um::libloaderapi::GetModuleHandleW(0 as *const u16);
     }
@@ -166,7 +165,7 @@ pub fn start_engine(size_x : i32, size_y : i32, window : &mut Window){
 
     window.bitmap_info = winapi::um::wingdi::BITMAPINFO { 
         bmiHeader : winapi::um::wingdi::BITMAPINFOHEADER { 
-            biSize : core::mem::size_of::<winapi::um::wingdi::BITMAPINFOHEADER>() as u32,
+            biSize : std::mem::size_of::<winapi::um::wingdi::BITMAPINFOHEADER>() as u32,
             biWidth : size_x,
             biHeight : size_y,
             biPlanes : 1,
@@ -191,7 +190,7 @@ pub fn start_engine(size_x : i32, size_y : i32, window : &mut Window){
 
 pub fn begin_frame(){
     unsafe {
-        let mut msg = core::mem::MaybeUninit::uninit();
+        let mut msg = std::mem::MaybeUninit::uninit();
         while winapi::um::winuser::PeekMessageW(msg.as_mut_ptr(), 0 as *mut winapi::shared::windef::HWND__, 0, 0, winapi::um::winuser::PM_REMOVE) != 0 {
             winapi::um::winuser::TranslateMessage(msg.as_ptr());
             winapi::um::winuser::DispatchMessageW(msg.as_ptr());}
@@ -374,7 +373,7 @@ impl Default for Window {
             bitmap_memory : 0 as *mut winapi::ctypes::c_void,
             bitmap_info : winapi::um::wingdi::BITMAPINFO {
                 bmiHeader : winapi::um::wingdi::BITMAPINFOHEADER {
-                    biSize : core::mem::size_of::<winapi::um::wingdi::BITMAPINFOHEADER>() as u32,
+                    biSize : std::mem::size_of::<winapi::um::wingdi::BITMAPINFOHEADER>() as u32,
                     biWidth : 0, biHeight : 0,
                     biPlanes : 1,
                     biBitCount : 32,
