@@ -1,1 +1,7 @@
 /target
+miniaudio.rs
+miniaudio.lib
+miniaudio.o
+stb_image.rs
+stb_image.lib
+stb_image.o
