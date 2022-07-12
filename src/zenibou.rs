@@ -1,9 +1,12 @@
 use crate::miniaudio;
 use crate::stb_image;
 
+use std::time;
 use std::vec::Vec;
 use std::mem::MaybeUninit;
 use std::collections::HashMap;
+
+// TODO: Try to find Rust safe alternatives for every "unsafe" part
 // TODO: Finish this job
 
 //void ProcessXEvent(void);
@@ -563,7 +566,7 @@ impl Window {
         
         unsafe{
             miniaudio::ma_decoder_init_memory(
-                data.as_ptr() as *const libc::c_void,
+                data.as_ptr() as *const std::ffi::c_void,
                 data.len() as u64, self.decoder_config.as_ptr(),
                 (*self.audio_decoders.get_mut(name).unwrap()).as_mut_ptr())
         };
@@ -571,7 +574,7 @@ impl Window {
         self.musics.insert(name, MaybeUninit::uninit());
         unsafe{ miniaudio::ma_sound_init_from_data_source(
             self.audio_engine.as_mut_ptr(),
-            (*self.audio_decoders.get_mut(name).unwrap()).as_mut_ptr() as *mut libc::c_void,
+            (*self.audio_decoders.get_mut(name).unwrap()).as_mut_ptr() as *mut std::ffi::c_void,
             miniaudio::ma_sound_flags_MA_SOUND_FLAG_DECODE as u32,
             0 as *mut miniaudio::ma_sound,
             (*self.musics.get_mut(name).unwrap()).as_mut_ptr()) };
@@ -606,7 +609,7 @@ impl Window {
             miniaudio::ma_resource_manager_register_encoded_data(
                 miniaudio::ma_engine_get_resource_manager(self.audio_engine.as_mut_ptr()),
                 name.as_ptr() as *const i8,
-                data.as_ptr() as *const libc::c_void, data.len() as u64
+                data.as_ptr() as *const std::ffi::c_void, data.len() as u64
             );
         };
     }
@@ -1383,35 +1386,29 @@ impl Default for Window {
     }
 }
 
-extern crate libc;
-
-extern {
-    pub fn clock() -> ::libc::clock_t;
-}
-
 pub struct Clock{
     pub last_second_elapsed_time : f64,
     pub last_frame_elapsed_time : f64,
     pub total_elapsed_time : f64,
     pub frame : u64,
     pub frames_last_second : i32,
-    pub time1 : i32,
-    pub time2 : i32,
+    pub time1 : time::Instant,
+    pub time2 : time::Instant,
 }
 
 impl Clock{
     fn tick(&mut self){
-      self.time2 = unsafe{ clock() };
-      self.last_frame_elapsed_time = ((self.time2 - self.time1) as f64) / 1000.0;// / CLOCKS_PER_SEC;
-      self.time1 = self.time2;
-      self.last_second_elapsed_time = self.last_second_elapsed_time + self.last_frame_elapsed_time;
-      self.total_elapsed_time = self.total_elapsed_time + self.last_frame_elapsed_time;
-      self.frame = self.frame + 1;
-      if self.last_second_elapsed_time > 1.{
-        self.frames_last_second = self.frame as i32;
-        self.last_second_elapsed_time = 0.;
-        self.frame = 0;
-      }
+        self.time2 = time::Instant::now();
+        self.last_frame_elapsed_time = self.time2.duration_since(self.time1).as_secs_f64();
+        self.time1 = self.time2;
+        self.last_second_elapsed_time = self.last_second_elapsed_time + self.last_frame_elapsed_time;
+        self.total_elapsed_time = self.total_elapsed_time + self.last_frame_elapsed_time;
+        self.frame = self.frame + 1;
+        if self.last_second_elapsed_time > 1.{
+            self.frames_last_second = self.frame as i32;
+            self.last_second_elapsed_time = 0.;
+            self.frame = 0;
+        }
     }  
 }
 
@@ -1423,8 +1420,8 @@ impl Default for Clock{
             total_elapsed_time : 0.0,
             frame : 0,
             frames_last_second : 0,
-            time1 : 0,
-            time2 : 0,
+            time1 : time::Instant::now(),
+            time2 : time::Instant::now(),
         }
     }
 }

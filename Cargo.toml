@@ -13,7 +13,6 @@ opt-level = "z"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = ["winuser","memoryapi","wingdi","libloaderapi","xinput"] }
-libc = "0.2"
 
 [[bin]]
 name = "zenibou-rs"
